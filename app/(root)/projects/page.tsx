@@ -1,7 +1,13 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { getProjects } from "../../actions/getProjects";
 import { addProject, NewProject } from "../../actions/addProject";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
@@ -39,45 +45,62 @@ export default function ProjectsPage() {
       await addProject(form);
       const updatedProjects = await getProjects(); // Refresh projects
       setProjects(updatedProjects);
-      setForm({ title: "", description: "", techStack: [], imageUrl: "", repoUrl: "", liveUrl: "", category: "" }); // Reset form
+      setForm({ title: "", description: "", imageUrl: "", repoUrl: "", liveUrl: "", category: "", techStack: [] }); // Reset form
     } catch (error) {
       console.error("Failed to add project", error);
     }
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Projects</h1>
+    <div className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Projects</h1>
 
       {/* Project Form */}
-      <form onSubmit={handleAddProject} className="mb-6 p-4 border rounded bg-gray-100">
-        <input type="text" name="title" placeholder="Project Title" value={form.title} onChange={handleChange} className="block w-full p-2 mb-2 border" required />
-        <textarea name="description" placeholder="Project Description" value={form.description} onChange={handleChange} className="block w-full p-2 mb-2 border" required />
-        <input type="text" name="techStack" placeholder="Tech Stack (comma separated)" value={form.techStack.join(", ")} onChange={handleTechStackChange} className="block w-full p-2 mb-2 border" required />
-        <input type="text" name="imageUrl" placeholder="Image URL" value={form.imageUrl} onChange={handleChange} className="block w-full p-2 mb-2 border" />
-        <input type="text" name="repoUrl" placeholder="GitHub Repo URL" value={form.repoUrl} onChange={handleChange} className="block w-full p-2 mb-2 border" />
-        <input type="text" name="liveUrl" placeholder="Live Project URL" value={form.liveUrl} onChange={handleChange} className="block w-full p-2 mb-2 border" />
-        <input type="text" name="category" placeholder="Category" value={form.category} onChange={handleChange} className="block w-full p-2 mb-2 border" required />
-        <button type="submit" className="p-2 bg-blue-600 text-white rounded w-full">Add Project</button>
-      </form>
+      <Card className="mb-6">
+        <CardHeader>
+          <h2 className="text-xl font-semibold">Add a New Project</h2>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAddProject} className="space-y-4">
+            <Input type="text" name="title" placeholder="Project Title" value={form.title} onChange={handleChange} required />
+            <Textarea name="description" placeholder="Project Description" value={form.description} onChange={handleChange} required />
+            <Input type="text" name="imageUrl" placeholder="Image URL" value={form.imageUrl} onChange={handleChange} />
+            <Input type="text" name="repoUrl" placeholder="GitHub Repo URL" value={form.repoUrl} onChange={handleChange} />
+            <Input type="text" name="liveUrl" placeholder="Live Project URL" value={form.liveUrl} onChange={handleChange} />
+            <Input type="text" name="category" placeholder="Category" value={form.category} onChange={handleChange} required />
+            <Input type="text" name="techStack" placeholder="Tech Stack (comma separated)" value={form.techStack.join(", ")} onChange={handleTechStackChange} required />
+            <Button type="submit" className="w-full">Add Project</Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Project List */}
       {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <ul>
-          {projects.map((project) => (
-            <li key={project.$id} className="p-4 border border-gray-300 my-2 rounded">
-              <h2 className="text-xl font-semibold">{project.title}</h2>
-              <p>{project.description}</p>
-              <p className="text-sm text-gray-500">Category: {project.category}</p>
-              <p>Tech Stack: {project.techStack.join(", ")}</p>
-              <a href={project.repoUrl} className="text-blue-500" target="_blank" rel="noopener noreferrer">
-                GitHub Repo
-              </a>
-            </li>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-lg" />
           ))}
-        </ul>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {projects.map((project) => (
+            <Card key={project.$id}>
+              <CardHeader>
+                <h2 className="text-xl font-semibold">{project.title}</h2>
+              </CardHeader>
+              <CardContent>
+                <p>{project.description}</p>
+                <p className="text-sm text-gray-500">Category: {project.category}</p>
+                <p>Tech Stack: {project.techStack.join(", ")}</p>
+              </CardContent>
+              <CardFooter>
+                <a href={project.repoUrl} className="text-blue-500" target="_blank" rel="noopener noreferrer">
+                  GitHub Repo
+                </a>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
