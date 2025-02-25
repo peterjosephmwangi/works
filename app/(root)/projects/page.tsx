@@ -1,17 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Select from "react-select";
 import { getProjects } from "../../actions/getProjects";
 import { addProject, NewProject } from "../../actions/addProject";
+import { databases } from "../../lib/appwrite";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const databaseId = "67add1b5003d443b3ae6";
+const collectionId = "67bcb2220032243e25e1";
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [technologies, setTechnologies] = useState([]);
   const [form, setForm] = useState<NewProject>({
     title: "",
     description: "",
@@ -22,6 +28,24 @@ export default function ProjectsPage() {
     category: "",
   });
 
+  // Fetch available technologies
+  useEffect(() => {
+    async function fetchTechnologies() {
+      try {
+        const response = await databases.listDocuments(databaseId, collectionId);
+        const techOptions = response.documents.map((tech) => ({
+          value: tech.name,
+          label: tech.name,
+        }));
+        setTechnologies(techOptions);
+      } catch (error) {
+        console.error("Error fetching technologies:", error);
+      }
+    }
+    fetchTechnologies();
+  }, []);
+
+  // Fetch projects
   useEffect(() => {
     async function fetchData() {
       const data = await getProjects();
@@ -35,17 +59,17 @@ export default function ProjectsPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleTechStackChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, techStack: e.target.value.split(",").map((tech) => tech.trim()) });
+  const handleTechStackChange = (selectedOptions) => {
+    setForm({ ...form, techStack: selectedOptions.map((option) => option.value) });
   };
 
   const handleAddProject = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await addProject(form);
-      const updatedProjects = await getProjects(); // Refresh projects
+      const updatedProjects = await getProjects();
       setProjects(updatedProjects);
-      setForm({ title: "", description: "", imageUrl: "", repoUrl: "", liveUrl: "", category: "", techStack: [] }); // Reset form
+      setForm({ title: "", description: "", imageUrl: "", repoUrl: "", liveUrl: "", category: "", techStack: [] });
     } catch (error) {
       console.error("Failed to add project", error);
     }
@@ -68,14 +92,26 @@ export default function ProjectsPage() {
             <Input type="text" name="repoUrl" placeholder="GitHub Repo URL" value={form.repoUrl} onChange={handleChange} />
             <Input type="text" name="liveUrl" placeholder="Live Project URL" value={form.liveUrl} onChange={handleChange} />
             <Input type="text" name="category" placeholder="Category" value={form.category} onChange={handleChange} required />
-            <Input type="text" name="techStack" placeholder="Tech Stack (comma separated)" value={form.techStack.join(", ")} onChange={handleTechStackChange} required />
+            
+            {/* React-Select for Tech Stack */}
+            <Select
+              isMulti
+              name="techStack"
+              options={technologies}
+              className="basic-multi-select"
+              classNamePrefix="select"
+              placeholder="Select Technologies"
+              value={technologies.filter((tech) => form.techStack.includes(tech.value))}
+              onChange={handleTechStackChange}
+            />
+
             <Button type="submit" className="w-full">Add Project</Button>
           </form>
         </CardContent>
       </Card>
 
       {/* Project List */}
-      {loading ? (
+      {/* {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <Skeleton key={i} className="h-20 w-full rounded-lg" />
@@ -101,7 +137,7 @@ export default function ProjectsPage() {
             </Card>
           ))}
         </div>
-      )}
+      )} */}
     </div>
   );
 }
